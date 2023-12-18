@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34330.188
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PhysicsEngine", "PhysicsEngine.csproj", "{8B01DDA5-A41E-4FE1-A1BB-535CE9D78ECF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GraphicsEngine", "..\GraphicsEngine\GraphicsEngine.csproj", "{39770E4E-CEED-4523-81F7-0E44B569C9C8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8B01DDA5-A41E-4FE1-A1BB-535CE9D78ECF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B01DDA5-A41E-4FE1-A1BB-535CE9D78ECF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8B01DDA5-A41E-4FE1-A1BB-535CE9D78ECF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8B01DDA5-A41E-4FE1-A1BB-535CE9D78ECF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{39770E4E-CEED-4523-81F7-0E44B569C9C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{39770E4E-CEED-4523-81F7-0E44B569C9C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{39770E4E-CEED-4523-81F7-0E44B569C9C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{39770E4E-CEED-4523-81F7-0E44B569C9C8}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B2A7149A-C606-432F-A270-3A1B8A517DD0}
+	EndGlobalSection
+EndGlobal
