@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using PhysicsEngine.Physics;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -6,7 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace PhysicsEngine;
 
-public struct Interval
+public struct Projection
 {
     public float begin;
     public float end;
@@ -30,13 +31,43 @@ public struct BoundingRect
     }
 }
 
+public struct Edge
+{
+    public Vector2 a;
+    public Vector2 b;
+    public readonly float Length()
+    {
+        return (a - b).Length();
+    }
+
+    public readonly Vector2 GetVector()
+    {
+        return b - a;
+    }
+
+    public readonly Vector2 GetNormal()
+    {
+        Vector2 v = GetVector();
+        return new Vector2(v.Y, -v.X);
+    }
+}
+
+public struct CollusionData
+{
+    public float depth;
+    public PolygonalRigidBody bodyA;
+    public PolygonalRigidBody bodyB;
+    public Vector2 normal;
+    public List<Vector2> contactPoints;
+}
+
 
 public static class Common
 {
     public const uint SCREENWIDTH = 800;
     public const uint SCREENHEIGHT = 480;
 
-    public const uint LINETHICKNESS = 5;
+    public const uint LINETHICKNESS = 2;
 
     public static float GetPolygonArea(List<Vector2> polygon_)
     {
@@ -96,5 +127,42 @@ public static class Common
         return res;
     }
 
+    public static Vector2 Project(Vector2 v, Vector2 direction)
+    {
+        direction.Normalize();
+        float l = Vector2.Dot(v, direction);
+        return l * direction;
+    }
+
+    public static float PointToEdgeDistance(Vector2 point, Edge edge)
+    {
+        Vector2 edgeDirection = edge.b - edge.a;
+        Vector2 vPoint = point - edge.a;
+        edgeDirection.Normalize();
+        float l = Vector2.Dot(vPoint, edgeDirection);
+        if (l < 0)
+        {
+            l = 0;
+        }
+        float length = edge.Length();
+        if (l > length)
+        {
+            l = length;
+        }
+        Vector2 projection = l * edgeDirection;
+        return (vPoint - projection).Length();
+    }
+
+    public static bool FloatEquals(float a, float b)
+    {
+        return Math.Abs(a - b) < 0.0001;
+    }
+
+    public static int Mod(int a, int m)
+    {
+        if (a > 0) return a % m;
+        if (a == 0) return 0;
+        return a % m + m;
+    }
 
 }

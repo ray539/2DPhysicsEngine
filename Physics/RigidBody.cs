@@ -100,19 +100,37 @@ public class PolygonalRigidBody
         return normals;
     }
 
+    public List<Edge> GetEdges()
+    {
+        List<Vector2> points = GetGlobalPoints();
+        int n = points.Count;
+        points.Add(points[0]);
+        List<Edge> edges = new List<Edge>();
+        for (int i = 0; i < n; i++)
+        {
+            Vector2 pi = points[i];
+            Vector2 pi1 = points[i + 1];
+            edges.Add(new Edge { a = pi, b = pi1 });
+        }
+        return edges;
+    }
 
 
-    public Interval ProjectOntoDirection(Vector2 direction)
+    public Projection ProjectOntoDirection(Vector2 direction)
     {
         direction.Normalize();
-        Interval interval = new() { begin = float.MaxValue, end = float.MinValue };
-        foreach(Vector2 point in GetGlobalPoints())
+        Projection projection = new() { begin = float.MaxValue, end = float.MinValue };
+        List<Vector2> globalPoints = GetGlobalPoints();
+
+        foreach(Vector2 point in globalPoints)
         {
             float d = Vector2.Dot(direction, point);
-            interval.begin = MathHelper.Min(interval.begin, d);
-            interval.end = MathHelper.Max(interval.end, d);
+
+            projection.begin = MathHelper.Min(projection.begin, d);
+            projection.end = MathHelper.Max(projection.end, d);
         }
-        return interval;
+
+        return projection;
     }
 
     public Vector2 ToLocal(Vector2 globalPoint)

@@ -42,7 +42,7 @@ namespace PhysicsEngine
                         }*/
             world.AddBox(100, 100, 100, 100);
             PolygonalRigidBody box2 = world.AddBox(300, 100, 100, 100);
-            box2.Rotation = MathHelper.PiOver4;
+/*            box2.Rotation = MathHelper.PiOver4;*/
 
 
         }
@@ -72,9 +72,9 @@ namespace PhysicsEngine
 
             v *= 50;
             player.Velocity = v;
-            
+            // player.Rotation = MathHelper.Pi * 18 / 180;
 
-            player.AngularVelocity = MathHelper.TwoPi / 10;
+/*            player.AngularVelocity = MathHelper.TwoPi / 10;*/
             this.world.Step((float) gameTime.ElapsedGameTime.TotalSeconds);
 
             base.Update(gameTime);
@@ -88,15 +88,23 @@ namespace PhysicsEngine
             foreach (PolygonalRigidBody body in world.Bodies)
             {
                 Color outline = Color.Black;
-                if (body.colliding)
-                {
-                    outline = Color.Red;
-                }
                 shapeDrawer.DrawConvexPolygon(body.GetGlobalPoints(), Color.Red, outline, Common.LINETHICKNESS);
                 shapeDrawer.DrawFilledCircle(body.Position, 3, 5, Color.White);
 
             }
+            foreach (CollusionData collusion in world.collusions)
+            {
+                Debug.WriteLine(collusion.depth);
+                Debug.WriteLine(collusion.normal);
+                foreach (Vector2 contactPoint in collusion.contactPoints)
+                {
+                    shapeDrawer.DrawFilledCircle(contactPoint, 3, 5, Color.Orange);
+                }
+            }
+
             shapeDrawer.End();
+
+
 
 
             base.Draw(gameTime);
