@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
+using static PhysicsEngine.Physics.PolygonalRigidBody;
 
 namespace PhysicsEngine.Physics;
 
@@ -11,6 +12,8 @@ namespace PhysicsEngine.Physics;
 
 public class PolygonalRigidBody
 {
+    public bool colliding = false;
+
     private List<Vector2> localPoints;
     private Vector2 position;
     private float rotation;
@@ -26,11 +29,12 @@ public class PolygonalRigidBody
     public Vector2 Velocity { get => velocity; set => velocity = value; }
     public float AngularVelocity { get => angularVelocity; set => angularVelocity = value; }
     public Vector2 Position { get => position; set => position = value; }
+    public float Rotation { get => rotation; set => rotation = value; }
 
     public PolygonalRigidBody(List<Vector2> points)
     {
         this.Position = Common.GetPolygonCentroid(points);
-        this.rotation = 0;
+        this.Rotation = 0;
         this.Velocity = Vector2.Zero;
         this.AngularVelocity = 0;
         this.acceleration = Vector2.Zero;
@@ -46,24 +50,19 @@ public class PolygonalRigidBody
     }
 
 
-    public struct BoundingRect
-    {
-        public float minX;
-        public float maxX;
-        public float minY;
-        public float maxY;
-    }
+
     public BoundingRect GetBoundingRect()
     {
         List<Vector2> points = GetGlobalPoints();
-        float minX = 100000;
-        float maxX = -100000;
-        float minY = 100000;
-        float maxY = -100000;
+        float minX = float.MaxValue;
+        float maxX = float.MinValue;
+        float minY = float.MaxValue;
+        float maxY = float.MinValue;
         foreach (Vector2 point in points)
         {
             minX = MathHelper.Min(minX, point.X);
             minY = MathHelper.Min(minY, point.Y);
+
             maxX = MathHelper.Max(maxX, point.X);
             maxY = MathHelper.Max(maxY, point.Y);
         }
@@ -82,20 +81,51 @@ public class PolygonalRigidBody
         this.Position += dt * this.Velocity + (1 / 2) * (dt * dt) * this.acceleration;
 
         this.angularVelocity += dt * this.angularAcceleration;
-        this.rotation += dt * this.angularVelocity + (1 / 2) * (dt * dt) * this.angularAcceleration;
+        this.Rotation += dt * this.angularVelocity + (1 / 2) * (dt * dt) * this.angularAcceleration;
+    }
+
+    public List<Vector2> GetNormals()
+    {
+        List<Vector2> points = GetGlobalPoints();
+        int n = points.Count;
+        points.Add(points[0]);
+        List<Vector2> normals = new List<Vector2>();
+        for (int i = 0; i < n; i++) {
+            Vector2 pi = points[i];
+            Vector2 pi1 = points[i + 1];
+            Vector2 edge = pi1 - pi;
+            Vector2 norm = new (edge.Y, -edge.X);
+            normals.Add(norm);
+        }
+        return normals;
+    }
+
+
+
+    public Interval ProjectOntoDirection(Vector2 direction)
+    {
+        direction.Normalize();
+        Interval interval = new() { begin = float.MaxValue, end = float.MinValue };
+        foreach(Vector2 point in GetGlobalPoints())
+        {
+            float d = Vector2.Dot(direction, point);
+            interval.begin = MathHelper.Min(interval.begin, d);
+            interval.end = MathHelper.Max(interval.end, d);
+        }
+        return interval;
     }
 
     public Vector2 ToLocal(Vector2 globalPoint)
     {
         Vector2 res = globalPoint - Position;
-        Matrix rotationMatrix = Matrix.CreateRotationZ(-rotation);
+        Matrix rotationMatrix = Matrix.CreateRotationZ(-Rotation);
         Vector2.Transform(res, rotationMatrix);
         return res;
     }
 
     public Vector2 ToWorld(Vector2 localPoint)
     {
-        Matrix rotationMatrix = Matrix.CreateRotationZ(rotation);
+        Matrix rotationMatrix = Matrix.CreateRotationZ(Rotation);
         Vector2 res = Vector2.Transform(localPoint, rotationMatrix);
         res += Position;
         return res;

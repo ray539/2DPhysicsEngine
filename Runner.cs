@@ -33,13 +33,16 @@ namespace PhysicsEngine
             this.shapeDrawer = new ShapeDrawer(this);
             this.world = new World();
 
-            Random rnd = new Random();
-            for (int i = 0; i < 10; i++)
-            {
-                int randX = rnd.Next(1, 79) * 10;
-                int randY = rnd.Next(1, 47) * 10;
-                PolygonalRigidBody p = world.AddBox(randX, randY, 50, 50);
-            }
+            /*            Random rnd = new Random();
+                        for (int i = 0; i < 10; i++)
+                        {
+                            int randX = rnd.Next(1, 79) * 10;
+                            int randY = rnd.Next(1, 47) * 10;
+                            world.AddBox(randX, randY, 50, 50);
+                        }*/
+            world.AddBox(100, 100, 100, 100);
+            PolygonalRigidBody box2 = world.AddBox(300, 100, 100, 100);
+            box2.Rotation = MathHelper.PiOver4;
 
 
         }
@@ -84,8 +87,14 @@ namespace PhysicsEngine
             shapeDrawer.Begin();
             foreach (PolygonalRigidBody body in world.Bodies)
             {
-                shapeDrawer.DrawConvexPolygon(body.GetGlobalPoints(), Color.Red, Color.Black, Common.LINETHICKNESS);
+                Color outline = Color.Black;
+                if (body.colliding)
+                {
+                    outline = Color.Red;
+                }
+                shapeDrawer.DrawConvexPolygon(body.GetGlobalPoints(), Color.Red, outline, Common.LINETHICKNESS);
                 shapeDrawer.DrawFilledCircle(body.Position, 3, 5, Color.White);
+
             }
             shapeDrawer.End();
 

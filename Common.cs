@@ -2,8 +2,34 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 
 namespace PhysicsEngine;
+
+public struct Interval
+{
+    public float begin;
+    public float end;
+
+    public override string ToString()
+    {
+        return String.Format("begin: {0}, end: {1}", begin, end);
+    }
+}
+
+public struct BoundingRect
+{
+    public float minX;
+    public float maxX;
+    public float minY;
+    public float maxY;
+
+    public override string ToString()
+    {
+        return String.Format("minX: {0}, minY: {1}, maxX: {2}, maxY: {3}", minX, minY, maxX, maxY);
+    }
+}
+
 
 public static class Common
 {
@@ -69,4 +95,6 @@ public static class Common
 
         return res;
     }
+
+
 }
