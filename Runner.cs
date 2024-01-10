@@ -28,6 +28,7 @@ namespace PhysicsEngine
             base.Initialize();
         }
 
+        public PolygonalRigidBody player;
         protected override void LoadContent()
         {
             this.shapeDrawer = new ShapeDrawer(this);
@@ -40,22 +41,30 @@ namespace PhysicsEngine
                             int randY = rnd.Next(1, 47) * 10;
                             world.AddBox(randX, randY, 50, 50);
                         }*/
-            world.AddBox(100, 100, 100, 100);
-            PolygonalRigidBody box2 = world.AddBox(300, 100, 100, 100);
-/*            box2.Rotation = MathHelper.PiOver4;*/
+            world.AddBox(100, 100, 100, 100, false);
 
-
+            world.AddBox(100, 200, 100, 100, true);
+            /*            box2.Rotation = MathHelper.PiOver4;*/
+            player = world.Bodies[0];
+            player.Rotation = MathHelper.TwoPi / 18;
         }
 
+        
         protected override void Update(GameTime gameTime)
         {
 
-
-            // TODO: Add your update logic here
-            PolygonalRigidBody player = world.Bodies[0];
             KeyboardState ks = Keyboard.GetState();
-            
             Vector2 v = Vector2.Zero;
+            if (ks.IsKeyDown(Keys.Space))
+            {
+                Common.PAUSE = true;
+            }
+
+            if (Common.PAUSE)
+            {
+                Debug.WriteLine("here");
+            }
+
             if (ks.IsKeyDown(Keys.A)) {
 
                 v += new Vector2(-1, 0);
@@ -70,11 +79,8 @@ namespace PhysicsEngine
                 v += new Vector2(0, -1);
             }
 
-            v *= 50;
-            player.Velocity = v;
-            // player.Rotation = MathHelper.Pi * 18 / 180;
-
-/*            player.AngularVelocity = MathHelper.TwoPi / 10;*/
+            v *= 100;
+            player.Acceleration = v;
             this.world.Step((float) gameTime.ElapsedGameTime.TotalSeconds);
 
             base.Update(gameTime);
@@ -88,18 +94,21 @@ namespace PhysicsEngine
             foreach (PolygonalRigidBody body in world.Bodies)
             {
                 Color outline = Color.Black;
-                shapeDrawer.DrawConvexPolygon(body.GetGlobalPoints(), Color.Red, outline, Common.LINETHICKNESS);
+                if (!body.inmovable)
+                {
+                    shapeDrawer.DrawConvexPolygon(body.GetGlobalPoints(), Color.Red, outline, Common.LINETHICKNESS);
+                } else
+                {
+                    shapeDrawer.DrawConvexPolygon(body.GetGlobalPoints(), Color.PaleGreen, outline, Common.LINETHICKNESS);
+                }
+                
                 shapeDrawer.DrawFilledCircle(body.Position, 3, 5, Color.White);
-
             }
+
+
             foreach (CollusionData collusion in world.collusions)
             {
-                Debug.WriteLine(collusion.depth);
-                Debug.WriteLine(collusion.normal);
-                foreach (Vector2 contactPoint in collusion.contactPoints)
-                {
-                    shapeDrawer.DrawFilledCircle(contactPoint, 3, 5, Color.Orange);
-                }
+                shapeDrawer.DrawFilledCircle(collusion.contactPoint, 3, 5, Color.Orange);
             }
 
             shapeDrawer.End();

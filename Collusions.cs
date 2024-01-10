@@ -1,63 +1,21 @@
-﻿using Microsoft.Xna.Framework;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Diagnostics;
-using System.Drawing;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-
-namespace PhysicsEngine.Physics;
-
-public class World
+using Microsoft.Xna.Framework;
+using PhysicsEngine;
+using PhysicsEngine.Physics;
+public class Collusions
 {
-
-    private List<PolygonalRigidBody> bodies;
-    public List<PolygonalRigidBody> Bodies { get => bodies; private set => bodies = value; }
-
-    public World()
+    private World world;
+    public Collusions()
     {
-        this.bodies = new List<PolygonalRigidBody>();
+
     }
 
-    public static PolygonalRigidBody GetBox(float x, float y, float width, float height, bool inmovable)
+    public static bool BoundingRectIntersect(PolygonalRigidBody bodyA, PolygonalRigidBody bodyB)
     {
-        List<Vector2> points = new List<Vector2>() {
-            new Vector2(x, y),
-            new Vector2(x + width, y),
-            new Vector2(x + width, y + height),
-            new Vector2(x, y + height),
-        };
-        PolygonalRigidBody body = new PolygonalRigidBody(points, inmovable);
-        return body;
-    }
-
-    public PolygonalRigidBody AddBox(float x, float y, float width, float height, bool inmovable)
-    {
-        PolygonalRigidBody box = GetBox(x, y, width, height, inmovable);
-        Bodies.Add(box);
-        return box;
-    }
-
-    public static PolygonalRigidBody GetPolygonalRigidBody(List<Vector2> points, bool inmovable)
-    {
-        PolygonalRigidBody body = new(points, inmovable);
-        return body;
-    }
-
-    public PolygonalRigidBody AddPolygonalRigidBody(List<Vector2> points, bool inmovable)
-    {
-        PolygonalRigidBody body = GetPolygonalRigidBody(points, inmovable);
-        Bodies.Add(body);
-        return body;
-    }
-
-
-
-    public static bool BoundingRectIntersect(PolygonalRigidBody bodyA, PolygonalRigidBody bodyB) {
         BoundingRect rectA = bodyA.GetBoundingRect();
         BoundingRect rectB = bodyB.GetBoundingRect();
         // sort by minX
@@ -112,7 +70,7 @@ public class World
                 collusionData.bodyA = bodyA;
 
                 collusionData.bodyB = bodyB;
-                
+
             }
         }
         return true;
@@ -141,9 +99,11 @@ public class World
         Vector2 vNext = points[Common.Mod(maxIndex + 1, points.Count)];
         Edge e1 = new Edge() { a = vPrev, b = v };
         Edge e2 = new Edge() { a = v, b = vNext };
-        if (Math.Abs(Vector2.Dot(e1.GetVector(), normal)) < Math.Abs(Vector2.Dot(e2.GetVector(), normal))) {
+        if (Math.Abs(Vector2.Dot(e1.GetVector(), normal)) < Math.Abs(Vector2.Dot(e2.GetVector(), normal)))
+        {
             return e1;
-        } else
+        }
+        else
         {
             return e2;
         }
@@ -186,7 +146,8 @@ public class World
         {
             refEdge = e1;
             incident = e2;
-        } else
+        }
+        else
         {
             refEdge = e2;
             incident = e1;
@@ -217,106 +178,5 @@ public class World
 
     public List<CollusionData> collusions;
 
-    public void GetCollusions()
-    {
-        foreach (PolygonalRigidBody rb in Bodies)
-        {
-            rb.colliding = false;
-        }
-        this.collusions = new();
-        for (int i = 0; i < Bodies.Count; i++)
-        {
-            for (int j = i + 1; j < Bodies.Count; j++)
-            {
-                PolygonalRigidBody bodyA = Bodies[i];
-                PolygonalRigidBody bodyB = Bodies[j];
-                if (BoundingRectIntersect(bodyA, bodyB) && SATIntersect(bodyA, bodyB, out CollusionData collusionData))
-                {
-                    this.collusions.Add(GetContactPoints(collusionData));
-                }
-            }
-        }
-    }
-
-    public CollusionData GetFastestContact(out float sepVel)
-    {
-
-        // get the most negative sep. velocity
-        float mostNegSepVel = float.MaxValue;
-        CollusionData ret = null;
-        foreach (CollusionData c in this.collusions)
-        {
-            float thisSepVel = c.CalculateSeparatingVelocity();
-            if (thisSepVel < mostNegSepVel)
-            {
-                mostNegSepVel = thisSepVel;
-                ret = c;
-            }
-        }
-        sepVel = mostNegSepVel;
-        return ret;
-    }
-
-    public void ResolveVelocities()
-    {
-        int numIters = 0;
-        int maxIters = this.collusions.Count * 2;
-        while (numIters < maxIters)
-        {
-            float mostNegSepVel;
-            CollusionData c = GetFastestContact(out mostNegSepVel);
-            if (mostNegSepVel >= 0) return;
-            c.ResolveVelocityAndRotation();
-            numIters++;
-        }
-    }
-
-    public CollusionData GetMaxDepthContact()
-    {
-        // return contact with max depth
-        float max = float.MinValue;
-        CollusionData ret = null;
-        foreach (CollusionData c in this.collusions)
-        {
-            if (c.depth > max)
-            {
-                max = c.depth;
-                ret = c;
-            }
-        }
-        return ret;
-    }
-
-    public void ResolveInterpenetration()
-    {
-        int numIters = 0;
-        int maxIters = this.collusions.Count * 2;
-        while (numIters < maxIters)
-        {
-            // recalculate depths for all collusions
-            foreach (var c_ in this.collusions)
-            {
-                c_.CalculateDepth();
-            }
-            CollusionData c = GetMaxDepthContact(); // contact with maximum depth
-            if (c.depth <= 0) break;
-            c.ResolvePenetration(); // moves the bodies to resolve the interpenetration
-            numIters++;
-        }
-    }
-
-    public void Step(float time)
-    {
-        foreach (PolygonalRigidBody rb in Bodies)
-        {
-            rb.Step(time);
-        }
-
-        GetCollusions();
-        ResolveInterpenetration();
-        // resolve momentums
-        ResolveVelocities();
-
-    }
 
 }

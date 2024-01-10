@@ -24,31 +24,40 @@ public class PolygonalRigidBody
     private Vector2 acceleration;
     private float angularAcceleration;
 
-    private float mass;
+    public float DENSITY = 0.001f;
+    public float RESTITUTION = 0.5f;
+    public float mass;
+    public float momentOfInertia;
+    public bool inmovable;
+    
+
 
     public Vector2 Velocity { get => velocity; set => velocity = value; }
     public float AngularVelocity { get => angularVelocity; set => angularVelocity = value; }
     public Vector2 Position { get => position; set => position = value; }
     public float Rotation { get => rotation; set => rotation = value; }
+    public Vector2 Acceleration { get => acceleration; set => acceleration = value; }
+    public float AngularAcceleration { get => angularAcceleration; set => angularAcceleration = value; }
 
-    public PolygonalRigidBody(List<Vector2> points)
+    public PolygonalRigidBody(List<Vector2> points, bool inmovable)
     {
         this.Position = Common.GetPolygonCentroid(points);
         this.Rotation = 0;
         this.Velocity = Vector2.Zero;
         this.AngularVelocity = 0;
-        this.acceleration = Vector2.Zero;
-        this.angularAcceleration = 0;
-        this.mass = 1;
+        this.Acceleration = Vector2.Zero;
+        this.AngularAcceleration = 0;
+        this.mass = Common.GetPolygonArea(points) * DENSITY;
+        this.momentOfInertia = Common.GetPolygonMomentOfInertia(points, DENSITY);
 
         this.localPoints = Common.TransformPoints(points, this.ToLocal);
+        this.inmovable = inmovable;
     }
 
     public void ApplyImpulse(Vector2 impulse)
     {
         this.Velocity += impulse / this.mass;
     }
-
 
 
     public BoundingRect GetBoundingRect()
@@ -72,16 +81,16 @@ public class PolygonalRigidBody
 
     public void ApplyForce(Vector2 force)
     {
-        this.acceleration = force / this.mass;
+        this.Acceleration = force / this.mass;
     }
 
     public void Step(float dt)
     {
-        this.Velocity += dt * this.acceleration;
-        this.Position += dt * this.Velocity + (1 / 2) * (dt * dt) * this.acceleration;
+        this.Velocity += dt * this.Acceleration;
+        this.Position += dt * this.Velocity + (1 / 2) * (dt * dt) * this.Acceleration;
 
-        this.angularVelocity += dt * this.angularAcceleration;
-        this.Rotation += dt * this.angularVelocity + (1 / 2) * (dt * dt) * this.angularAcceleration;
+        this.AngularVelocity += dt * this.AngularAcceleration;
+        this.Rotation += dt * this.AngularVelocity + (1 / 2) * (dt * dt) * this.AngularAcceleration;
     }
 
     public List<Vector2> GetNormals()
@@ -119,15 +128,25 @@ public class PolygonalRigidBody
     public Projection ProjectOntoDirection(Vector2 direction)
     {
         direction.Normalize();
-        Projection projection = new() { begin = float.MaxValue, end = float.MinValue };
+        Projection projection = new() { 
+            begin = float.MaxValue, 
+            end = float.MinValue,
+        };
         List<Vector2> globalPoints = GetGlobalPoints();
 
         foreach(Vector2 point in globalPoints)
         {
-            float d = Vector2.Dot(direction, point);
+            float projDist = Vector2.Dot(direction, point);
 
-            projection.begin = MathHelper.Min(projection.begin, d);
-            projection.end = MathHelper.Max(projection.end, d);
+            if (projDist < projection.begin)
+            {
+                projection.begin = projDist;
+            }
+            
+            if (projDist > projection.end)
+            {
+                projection.end = projDist;
+            }
         }
 
         return projection;

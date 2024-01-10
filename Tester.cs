@@ -16,12 +16,8 @@ internal class Tester
                     new Vector2(100, 0),
                     new Vector2(100, 100),
                     new Vector2(0, 100)
-                });
-        PolygonalRigidBody bodyB = World.GetBox(80, 80, 100, 100);
-        // bodyB.Rotation = MathHelper.Pi / 4;
-        World.SATIntersect(bodyB, bodyA, out CollusionData collusionData);
-        collusionData = World.GetContactPoints(collusionData);
-        int temp = 1;
+                }, false);
+        Debug.WriteLine(Common.GetPolygonMomentOfInertia(bodyA.GetGlobalPoints(), bodyA.DENSITY));
     }
 }
 
