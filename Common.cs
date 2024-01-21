@@ -198,6 +198,8 @@ public static class Common
 {
     public const uint SCREENWIDTH = 800;
     public const uint SCREENHEIGHT = 480;
+    public const float GRAVITY = 900;
+
 
     public const uint LINETHICKNESS = 2;
 

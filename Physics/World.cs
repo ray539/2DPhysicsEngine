@@ -15,12 +15,23 @@ namespace PhysicsEngine.Physics;
 public class World
 {
 
+    private List<ForceGenerator> forceGenerators;
     private List<PolygonalRigidBody> bodies;
     public List<PolygonalRigidBody> Bodies { get => bodies; private set => bodies = value; }
+    public List<ForceGenerator> ForceGenerators { get => forceGenerators; }
 
     public World()
     {
         this.bodies = new List<PolygonalRigidBody>();
+        this.forceGenerators = new List<ForceGenerator>
+        {
+            new Gravity(this.bodies)
+        };
+    }
+
+    public void AddForceGenerator(ForceGenerator forceGenerator)
+    {
+        this.ForceGenerators.Add(forceGenerator);
     }
 
     public static PolygonalRigidBody GetBox(float x, float y, float width, float height, bool inmovable)
@@ -54,8 +65,6 @@ public class World
         Bodies.Add(body);
         return body;
     }
-
-
 
     public static bool BoundingRectIntersect(PolygonalRigidBody bodyA, PolygonalRigidBody bodyB) {
         BoundingRect rectA = bodyA.GetBoundingRect();
@@ -307,6 +316,16 @@ public class World
 
     public void Step(float time)
     {
+        foreach (var body in this.bodies)
+        {
+            body.EmptyForces();
+        }
+
+        foreach (var fg in ForceGenerators)
+        {
+            fg.ApplyForces();
+        }
+
         foreach (PolygonalRigidBody rb in Bodies)
         {
             rb.Step(time);
@@ -314,9 +333,15 @@ public class World
 
         GetCollusions();
         ResolveInterpenetration();
-        // resolve momentums
         ResolveVelocities();
+    }
 
+    public void Step(float time, int numIters)
+    {
+        for (int i = 0; i < numIters; i++)
+        {
+            Step(time / (float)numIters);
+        }
     }
 
 }

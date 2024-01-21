@@ -8,6 +8,11 @@ using static PhysicsEngine.Physics.PolygonalRigidBody;
 
 namespace PhysicsEngine.Physics;
 
+public struct Force
+{
+    public Vector2 forceVector;
+    public Vector2 contactPoint;
+}
 
 
 public class PolygonalRigidBody
@@ -25,7 +30,7 @@ public class PolygonalRigidBody
     private float angularAcceleration;
 
     public float DENSITY = 0.001f;
-    public float RESTITUTION = 0.5f;
+    public float RESTITUTION = 0.2f;
     public float mass;
     public float momentOfInertia;
     public bool inmovable;
@@ -36,8 +41,8 @@ public class PolygonalRigidBody
     public float AngularVelocity { get => angularVelocity; set => angularVelocity = value; }
     public Vector2 Position { get => position; set => position = value; }
     public float Rotation { get => rotation; set => rotation = value; }
-    public Vector2 Acceleration { get => acceleration; set => acceleration = value; }
-    public float AngularAcceleration { get => angularAcceleration; set => angularAcceleration = value; }
+    public Vector2 Acceleration { get => acceleration;}
+    public float AngularAcceleration { get => angularAcceleration; }
 
     public PolygonalRigidBody(List<Vector2> points, bool inmovable)
     {
@@ -45,20 +50,14 @@ public class PolygonalRigidBody
         this.Rotation = 0;
         this.Velocity = Vector2.Zero;
         this.AngularVelocity = 0;
-        this.Acceleration = Vector2.Zero;
-        this.AngularAcceleration = 0;
+        this.acceleration = Vector2.Zero;
+        this.angularAcceleration = 0;
         this.mass = Common.GetPolygonArea(points) * DENSITY;
         this.momentOfInertia = Common.GetPolygonMomentOfInertia(points, DENSITY);
 
         this.localPoints = Common.TransformPoints(points, this.ToLocal);
         this.inmovable = inmovable;
     }
-
-    public void ApplyImpulse(Vector2 impulse)
-    {
-        this.Velocity += impulse / this.mass;
-    }
-
 
     public BoundingRect GetBoundingRect()
     {
@@ -79,9 +78,30 @@ public class PolygonalRigidBody
         return new BoundingRect() { minX = minX, maxX = maxX, minY = minY, maxY = maxY};
     }
 
-    public void ApplyForce(Vector2 force)
+
+    public void EmptyForces()
     {
-        this.Acceleration = force / this.mass;
+        this.acceleration = Vector2.Zero;
+        this.angularAcceleration = 0;
+    }
+
+    /// <summary>
+    /// <paramref name="force"/> force vector
+    /// <paramref name="contactPoint"/> contact point in world coordinates
+    /// </summary>
+    public void ApplyForce(Force force)
+    {
+        if (this.inmovable)
+        {
+            return;
+        }
+        Vector2 deltaA = force.forceVector / this.mass;
+        Vector2 r = this.position - force.contactPoint;
+        Vector2 fPerp = new Vector2(-force.forceVector.Y, force.forceVector.X);
+        float deltaAlpha = Vector2.Dot(r, fPerp);
+
+        this.acceleration += deltaA;
+        this.angularAcceleration += deltaAlpha;
     }
 
     public void Step(float dt)

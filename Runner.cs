@@ -6,6 +6,7 @@ using GraphicsEngine;
 using System.Diagnostics;
 using PhysicsEngine.Physics;
 using System.Collections.Generic;
+using PhysicsEngine.Physics.ForceGenerators;
 
 namespace PhysicsEngine
 {
@@ -29,24 +30,33 @@ namespace PhysicsEngine
         }
 
         public PolygonalRigidBody player;
+        public PlayerForceGenerator playerForceGen;
         protected override void LoadContent()
         {
             this.shapeDrawer = new ShapeDrawer(this);
             this.world = new World();
 
-            /*            Random rnd = new Random();
-                        for (int i = 0; i < 10; i++)
-                        {
-                            int randX = rnd.Next(1, 79) * 10;
-                            int randY = rnd.Next(1, 47) * 10;
-                            world.AddBox(randX, randY, 50, 50);
-                        }*/
-            world.AddBox(100, 100, 100, 100, false);
+            // world.AddBox(400, 120, 100, 100, false);
+            world.AddPolygonalRigidBody(new List<Vector2>()
+            {
+                new Vector2(400, 120),
+                new Vector2(500, 120),
+                new Vector2(450, 220)
+            }, false);
 
-            world.AddBox(100, 200, 100, 100, true);
-            /*            box2.Rotation = MathHelper.PiOver4;*/
+            world.AddBox(200, 120, 100, 100, false);
+            world.AddBox(200, 220, 100, 100, false);
+            world.AddBox(200, 320, 100, 100, false);
+
+
+            world.AddBox(100, 100, 700, 20, true);
+            world.AddBox(100, 120, 50, 300, true);
+            world.AddBox(750, 120, 50, 300, true);
+            // world.Bodies[4].Rotation = (float) Math.PI / 6;
             player = world.Bodies[0];
-            player.Rotation = MathHelper.TwoPi / 18;
+
+            this.playerForceGen = new PlayerForceGenerator(player);
+            this.world.AddForceGenerator(this.playerForceGen);
         }
 
         
@@ -79,9 +89,11 @@ namespace PhysicsEngine
                 v += new Vector2(0, -1);
             }
 
-            v *= 100;
-            player.Acceleration = v;
-            this.world.Step((float) gameTime.ElapsedGameTime.TotalSeconds);
+            v *= 1000 * player.mass;
+            this.playerForceGen.SetForceVector(v);
+
+            this.world.Step((float)gameTime.ElapsedGameTime.TotalSeconds, 2);
+            
 
             base.Update(gameTime);
         }
