@@ -4,14 +4,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
-using PhysicsEngine;
 using PhysicsEngine.Physics;
-public class Collusions
+public class CollusionsHandler
 {
     private World world;
-    public Collusions()
+    public List<CollusionData> collusions;
+    public CollusionsHandler(World world)
     {
-
+        this.world = world;
+        this.collusions = new List<CollusionData>();
     }
 
     public static bool BoundingRectIntersect(PolygonalRigidBody bodyA, PolygonalRigidBody bodyB)
@@ -127,6 +128,12 @@ public class Collusions
 
     }
 
+    /// <summary>
+    /// returns contact points given a collusionData object.
+    /// If it turns out the objects actually aren't colliding, null is returned
+    /// </summary>
+    /// <param name="initialData"></param>
+    /// <returns></returns>
     public static CollusionData GetContactPoints(CollusionData initialData)
     {
         CollusionData finalData = initialData.Clone();
@@ -155,28 +162,159 @@ public class Collusions
         }
         // clip along ab
         Vector2 direction = refEdge.b - refEdge.a;
-
         direction.Normalize();
         float a = Vector2.Dot(direction, refEdge.a);
         List<Vector2> clippedPoints = Clip(direction, incident.a, incident.b, a);
+        if (clippedPoints.Count < 2) return null;
 
         float b = Vector2.Dot(-direction, refEdge.b);
         clippedPoints = Clip(-direction, clippedPoints[0], clippedPoints[1], b);
 
+        if (clippedPoints.Count < 2) return null;
         // third direction is normal pointing in
         List<Vector2> result = new();
         Vector2 refNormal = new Vector2(-direction.Y, direction.X);
-
         float c = Vector2.Dot(refNormal, refEdge.a);
-
         if (Vector2.Dot(clippedPoints[0], refNormal) - c >= 0) result.Add(clippedPoints[0]);
         if (Vector2.Dot(clippedPoints[1], refNormal) - c >= 0) result.Add(clippedPoints[1]);
+
+        if (result.Count == 0) return null;
 
         finalData.SetContactPoint(result);
         return finalData;
     }
 
-    public List<CollusionData> collusions;
+
+    private void GetCollusions()
+    {
+        foreach (PolygonalRigidBody rb in world.Bodies)
+        {
+            rb.colliding = false;
+        }
+        this.collusions = new();
+        for (int i = 0; i < world.Bodies.Count; i++)
+        {
+            for (int j = i + 1; j < world.Bodies.Count; j++)
+            {
+                PolygonalRigidBody bodyA = world.Bodies[i];
+                PolygonalRigidBody bodyB = world.Bodies[j];
+                if (BoundingRectIntersect(bodyA, bodyB) && SATIntersect(bodyA, bodyB, out CollusionData collusionData))
+                {
+                    CollusionData res = GetContactPoints(collusionData);
+                    if (res != null)
+                    {
+                        this.collusions.Add(res);
+                    }
+                    
+                }
+            }
+        }
+    }
+
+    private CollusionData GetFastestContact(out float sepVel)
+    {
+
+        // get the most negative sep. velocity
+        float mostNegSepVel = float.MaxValue;
+        CollusionData ret = null;
+        foreach (CollusionData c in this.collusions)
+        {
+            float thisSepVel = c.CalculateSeparatingVelocity();
+            if (thisSepVel < mostNegSepVel)
+            {
+                mostNegSepVel = thisSepVel;
+                ret = c;
+            }
+        }
+        sepVel = mostNegSepVel;
+        return ret;
+    }
+
+    private void ResolveVelocitiesByMax()
+    {
+        int numIters = 0;
+        int maxIters = this.collusions.Count * 2;
+        while (numIters < maxIters)
+        {
+            float mostNegSepVel;
+            CollusionData c = GetFastestContact(out mostNegSepVel);
+            if (mostNegSepVel >= 0) return;
+            c.ResolveVelocityAndRotation();
+            numIters++;
+        }
+    }
+
+    private CollusionData GetMaxDepthContact()
+    {
+        // return contact with max depth
+        float max = float.MinValue;
+        CollusionData ret = null;
+        foreach (CollusionData c in this.collusions)
+        {
+            if (c.depth > max)
+            {
+                max = c.depth;
+                ret = c;
+            }
+        }
+        return ret;
+    }
+
+    private void ResolveInterpenetrationByMax()
+    {
+        int numIters = 0;
+        int maxIters = this.collusions.Count * 2;
+        while (numIters < maxIters)
+        {
+            // recalculate depths for all collusions
+            foreach (var c_ in this.collusions)
+            {
+                c_.CalculateDepth();
+            }
+            CollusionData c = GetMaxDepthContact(); // contact with maximum depth
+            if (c.depth <= 0) break;
+            c.ResolvePenetration(); // moves the bodies to resolve the interpenetration
+            numIters++;
+        }
+    }
+
+    private void ResolveVelocitiesSimple()
+    {
+        for (int i = 0; i < 2; i++)
+        {
+            foreach (var c in this.collusions)
+            {
+                c.ResolveVelocityAndRotation();
+            }
+        }
+    }
+
+    private void ResolveInterpenetrationSimple()
+    {
+        for (int i = 0; i < 2; i++)
+        {
+            foreach (var c in this.collusions)
+            {
+                c.CalculateDepth();
+                c.ResolvePenetration();
+            }
+        }
+
+    }
+
+    public void ResolveCollusionsSimple()
+    {
+        GetCollusions();
+        ResolveInterpenetrationSimple();
+        ResolveVelocitiesSimple();
+    }
+
+    public void ResolveCollusionsByMax()
+    {
+        GetCollusions();
+        ResolveInterpenetrationByMax();
+        ResolveVelocitiesByMax();
+    }
 
 
 }

@@ -44,12 +44,17 @@ namespace PhysicsEngine
                 new Vector2(450, 220)
             }, false);
 
-            world.AddBox(200, 120, 100, 100, false);
-            world.AddBox(200, 220, 100, 100, false);
-            world.AddBox(200, 320, 100, 100, false);
+            world.AddBox(200, 120, 50, 50, false);
+            world.AddBox(250, 120, 50, 50, false);
+            world.AddBox(300, 120, 50, 50, false);
+            world.AddBox(350, 120, 50, 50, false);
+
+            world.AddBox(250, 170, 50, 50, false);
+            world.AddBox(300, 170, 50, 50, false);
+            world.AddBox(350, 170, 50, 50, false);
 
 
-            world.AddBox(100, 100, 700, 20, true);
+            world.AddBox(100, 90, 700, 20, true);
             world.AddBox(100, 120, 50, 300, true);
             world.AddBox(750, 120, 50, 300, true);
             // world.Bodies[4].Rotation = (float) Math.PI / 6;
@@ -92,7 +97,7 @@ namespace PhysicsEngine
             v *= 1000 * player.mass;
             this.playerForceGen.SetForceVector(v);
 
-            this.world.Step((float)gameTime.ElapsedGameTime.TotalSeconds, 2);
+            this.world.Step((float)gameTime.ElapsedGameTime.TotalSeconds, 10);
             
 
             base.Update(gameTime);
@@ -118,10 +123,10 @@ namespace PhysicsEngine
             }
 
 
-            foreach (CollusionData collusion in world.collusions)
-            {
-                shapeDrawer.DrawFilledCircle(collusion.contactPoint, 3, 5, Color.Orange);
-            }
+            /*            foreach (CollusionData collusion in world.Collusions)
+                        {
+                            shapeDrawer.DrawFilledCircle(collusion.contactPoint, 3, 5, Color.Orange);
+                        } */
 
             shapeDrawer.End();
 
